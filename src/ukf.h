@@ -54,6 +54,34 @@ private:
 
     double microsecsToSecs(long long micros) const;
 
+    Eigen::MatrixXd generateSigmaPoints() const;
+
+    void predictSigmaPoints(const Eigen::MatrixXd& sigmaPoints, const double delta_t);
+
+    void normalizeAngle(Eigen::VectorXd& input, const int row) const;
+
+    void predictState();
+
+    Eigen::MatrixXd sigmaToRadarSpace() const;
+
+    Eigen::MatrixXd sigmaToLidarSpace() const;
+
+    Eigen::VectorXd predictZ(const Eigen::MatrixXd& Zsig, const int dim) const;
+
+    Eigen::MatrixXd genS(
+        const Eigen::MatrixXd& Zsig,
+        const Eigen::VectorXd& z_pred,
+        const int dim,
+        const bool norm_radar = false) const;
+
+    void updateState(
+        const MeasurementPackage& package,
+        const Eigen::MatrixXd& Zsig,
+        const Eigen::VectorXd& z_pred,
+        const Eigen::MatrixXd& S,
+        const int dim,
+        const bool norm_radar = false);
+
     // initially set to false, set to true in first call of ProcessMeasurement
     bool is_initialized_;
 
@@ -104,6 +132,15 @@ private:
 
     // Sigma point spreading parameter
     double lambda_;
+
+    int n_z_radar_;
+
+    int n_z_lidar_;
+
+    Eigen::MatrixXd R_radar_;
+
+    Eigen::MatrixXd R_lidar_;
+
 };
 
 #endif  // UKF_H
