@@ -42,6 +42,17 @@ public:
      */
     void UpdateRadar(MeasurementPackage meas_package);
 
+    // state vector: [pos1 pos2 vel_abs yaw_angle yaw_rate] in SI units and rad
+    Eigen::VectorXd x_;
+
+private:
+    void initState(const MeasurementPackage& package);
+
+    Eigen::VectorXd stateFromLidar(const MeasurementPackage& package) const;
+
+    Eigen::VectorXd stateFromRadar(const MeasurementPackage& package) const;
+
+    double microsecsToSecs(long long micros) const;
 
     // initially set to false, set to true in first call of ProcessMeasurement
     bool is_initialized_;
@@ -51,9 +62,6 @@ public:
 
     // if this is false, radar measurements will be ignored (except for init)
     bool use_radar_;
-
-    // state vector: [pos1 pos2 vel_abs yaw_angle yaw_rate] in SI units and rad
-    Eigen::VectorXd x_;
 
     // state covariance matrix
     Eigen::MatrixXd P_;
