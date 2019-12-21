@@ -95,14 +95,7 @@ void UKF::ProcessMeasurement(MeasurementPackage meas_package)
 {
     if (!is_initialized_)
     {
-        try
-        {
-            initState(meas_package);
-        }
-        catch (const std::runtime_error&)
-        {
-            throw;
-        }
+        initState(meas_package);
         return;
     }
 
@@ -139,9 +132,7 @@ void UKF::Prediction(double delta_t)
 void UKF::UpdateLidar(MeasurementPackage meas_package)
 {
     Eigen::MatrixXd Zsig = sigmaToLidarSpace();
-
     VectorXd z_pred = predictZ(Zsig, n_z_lidar_);
-
     MatrixXd S = genS(Zsig, z_pred, n_z_lidar_);
     S += R_lidar_;
 
@@ -152,9 +143,7 @@ void UKF::UpdateLidar(MeasurementPackage meas_package)
 void UKF::UpdateRadar(MeasurementPackage meas_package)
 {
     Eigen::MatrixXd Zsig = sigmaToRadarSpace();
-
     VectorXd z_pred = predictZ(Zsig, n_z_radar_);
-
     MatrixXd S = genS(Zsig, z_pred, n_z_radar_, true);
     S += R_radar_;
 
@@ -176,7 +165,8 @@ void UKF::initState(const MeasurementPackage& package)
     }
     else
     {
-        throw std::runtime_error("Can't process measurement package: Sensor type is not supported");
+        // unknown sensor type
+        return;
     }
 
     time_us_ = package.timestamp_;
@@ -238,14 +228,14 @@ void UKF::predictSigmaPoints(const Eigen::MatrixXd& sigmaPoints, const double de
 {
     for (int i = 0; i < 2 * n_aug_ + 1; ++i)
     {
-        Eigen::VectorXd upd(5);
+        Eigen::VectorXd upd(n_x_);
         upd << 0,
             0,
             0,
             sigmaPoints.col(i)(4) * delta_t,
             0;
 
-        Eigen::VectorXd err(5);
+        Eigen::VectorXd err(n_x_);
         err << 0.5 * delta_t * delta_t * cos(sigmaPoints.col(i)(3)) * sigmaPoints.col(i)(5),
             0.5 * delta_t * delta_t * sin(sigmaPoints.col(i)(3)) * sigmaPoints.col(i)(5),
             delta_t* sigmaPoints.col(i)(5),
@@ -263,7 +253,7 @@ void UKF::predictSigmaPoints(const Eigen::MatrixXd& sigmaPoints, const double de
             upd(0) = sigmaPoints.col(i)(2) * cos(sigmaPoints.col(i)(3)) * delta_t;
             upd(1) = sigmaPoints.col(i)(2) * sin(sigmaPoints.col(i)(3)) * delta_t;
         }
-        Xsig_pred_.col(i) = sigmaPoints.col(i).head(5) + upd + err;
+        Xsig_pred_.col(i) = sigmaPoints.col(i).head(n_x_) + upd + err;
     }
 }
 
@@ -281,7 +271,6 @@ void UKF::normalizeAngle(Eigen::VectorXd& input, const int row) const
 
 void UKF::predictState()
 {
-
     x_.setZero();
     for (int i = 0; i < 2 * n_aug_ + 1; ++i)
     {
